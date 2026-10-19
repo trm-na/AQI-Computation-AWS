@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AQI Computation</title>
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #74ebd5, #acb6e5);
+      font-family: "Segoe UI", sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .card {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 12px;
+      width: 420px;
+      box-shadow: 0 15px 25px rgba(0,0,0,0.2);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      margin-top: 12px;
+      display: block;
+      font-weight: 600;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    button {
+      margin-top: 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.25s ease, opacity 0.25s ease;
+    }
+
+    button:hover {
+      background-color: #43a047;
+    }
+
+    button:disabled {
+      background-color: #8fbf94;
+      color: #2f4f2f;
+      cursor: not-allowed;
+      opacity: 0.85;
+    }
+    button:disabled:hover {
+      background-color: #8fbf94;
+    }
+
+    #date-container {
+      display: none;
+    }
+
+    .status {
+      margin-top: 20px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .spinner {
+      margin: 15px auto;
+      width: 40px;
+      height: 40px;
+      border: 5px solid #ccc;
+      border-top: 5px solid #4CAF50;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f1f8e9;
+      border-radius: 8px;
+      text-align: center;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+  <h1>AQI Computation</h1>
+
+  <label>Computation Type</label>
+  <select id="type">
+    <option value="">-- Select --</option>
+    <option value="last_hour">Last Hour</option>
+    <option value="last_week">Last Week</option>
+    <option value="last_month">Last Month</option>
+    <option value="custom_day">Any Day (2016 – Yesterday)</option>
+  </select>
+
+  <label>Address</label>
+  <input type="text" id="address">
+
+  <label>Radius (0 – 20 km): <span id="radius-value">10</span> km</label>
+<input type="range"
+       id="radius"
+       min="0"
+       max="20"
+       value="10"
+       step="0.1"
+       oninput="updateRadius(this.value)">
+
+  <div id="date-container">
+    <label>Date</label>
+    <input type="date" id="date" min="2016-01-01">
+  </div>
+
+  <button id="submit-btn" onclick="submitRequest()">Compute AQI</button>
+
+  <div class="spinner" id="spinner"></div>
+  <div class="status" id="status"></div>
+
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+const typeSelect = document.getElementById("type");
+const dateContainer = document.getElementById("date-container");
+
+// IMPORTANT, PLEASE, CHANGE THE URL FOR THE NEW VALUE
+const API_BASE = "https://cze1i6meid.execute-api.us-east-1.amazonaws.com/prod";
+
+typeSelect.addEventListener("change", () => {
+  dateContainer.style.display =
+    typeSelect.value === "custom_day" ? "block" : "none";
+});
+
+let jobId = null;
+
+// Set max selectable date to yesterday
+const dateInput = document.getElementById("date");
+
+const today = new Date();
+today.setDate(today.getDate() - 1);
+
+const yyyy = today.getFullYear();
+const mm = String(today.getMonth() + 1).padStart(2, "0");
+const dd = String(today.getDate()).padStart(2, "0");
+
+dateInput.max = `${yyyy}-${mm}-${dd}`;
+
+function updateRadius(val) {
+  document.getElementById("radius-value").innerText = val;
+}
+
+async function submitRequest() {
+  const submitBtn = document.getElementById("submit-btn");
+  submitBtn.disabled = true;
+  submitBtn.innerText = "Computing...";
+
+  document.getElementById("result").style.display = "none";
+  document.getElementById("spinner").style.display = "block";
+  document.getElementById("status").innerText = "Computing the AQI...";
+
+  const payload = {
+    type: typeSelect.value,
+    address: document.getElementById("address").value,
+    radius: Number(document.getElementById("radius").value),
+    date: document.getElementById("date").value || null
+  };
+
+  const response = await fetch(`${API_BASE}/submit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await response.json();
+  jobId = data.job_id;
+
+  pollResult();
+}
+
+async function pollResult() {
+  const interval = setInterval(async () => {
+    const res = await fetch(`${API_BASE}/result?job_id=${jobId}`);
+    const data = await res.json();
+
+    if (data.status === "DONE") {
+      clearInterval(interval);
+      document.getElementById("spinner").style.display = "none";
+      document.getElementById("status").innerText = "AQI Computed";
+      document.getElementById("result").style.display = "block";
+      document.getElementById("result").innerHTML =
+        `<h3>Result</h3><p>${data.message}</p>`;
+      const submitBtn = document.getElementById("submit-btn");
+      submitBtn.innerText = "Compute AQI";
+      submitBtn.disabled = false;
+    }
+  }, 3000);
+}
+</script>
+
+</body>
+</html>
