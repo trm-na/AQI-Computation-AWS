@@ -42,26 +42,29 @@ To replicate the system with the code in this directory, please follow these ste
 	3.	Execute aws configure.
 	a.	Input the Access Key ID, Secret Access Key and Session Token given by AWS, enter us-east-1 as the region and leave output format blank.
 	4.	Execute python launch_aws_system.py
-	5.	Follow the instructions given in the programme.
-  		a.	CAUTION: it is important to follow the instructions as stated and inputting the correct data. Failure to do so may make the system to not work. In this case, please, delete all the created systems in the AWS console and repeat the process. In case of additional failures, for example, a problem with the bucket name, please restart the deployment from the beginning, as the failure may affect all the source code files, included the ones that come compressed.
+	5.	Follow the instructions given in the programme. CAUTION: it is important to follow the instructions as stated and inputting the correct data. Failure to do so may make the system to not work. In this case, please, delete all the created systems in the AWS console and repeat the process. In case of additional failures, for example, a problem with the bucket name, please restart the deployment from the beginning, as the failure may affect all the source code files, included the ones that come compressed.
 	6.	Access the S3 bucket and get to web/index.html and open it to see the website to request the AQI computations.
-	7.	In case the stress tests want to be replicated:
-  		a.	Open stress_test.py with a text editor.
-  		b.	Change the API URL to the one retrieved for the HTML.
-  		c.	Change the constants to your liking.
-  		d.	Save the changes.
-  		e.	Execute python stress_test.py
-  		f.	To see the stress graphs: 
-        i.	Access the AWS console and get to EC2 service.
-        ii.	Select Auto Scaling groups from the list on the left.
-        iii.	Select Worker-Autoscaling.
-        iv.	Select Monitoring.
-        v.	Enable Auto Scaling group metrics collection.
-        vi.	Update the graphs when there is relevant data.
-  
-        i.	Access the AWS console and get to Simple Queue Service.
-        ii.	Select the desired queue.
-        iii.	Select Monitoring.
-        iv.	Update the graphs when there is relevant data.
+
+In case the stress tests want to be replicated:
+
+	1.	Open stress_test.py with a text editor.
+	2.	Change the API URL to the one retrieved for the HTML.
+	3.	Change the constants to your liking.
+	4.	Save the changes.
+	5.	Execute python stress_test.py
+		
+To see the stress graphs: 
+
+	1.	Access the AWS console and get to EC2 service.
+	2.	Select Auto Scaling groups from the list on the left.
+	3.	Select Worker-Autoscaling.
+	4.	Select Monitoring.
+	5.	Enable Auto Scaling group metrics collection.
+	6.	Update the graphs when there is relevant data.
+
+	i.	Access the AWS console and get to Simple Queue Service.
+	ii.	Select the desired queue.
+	iii.	Select Monitoring.
+	iv.	Update the graphs when there is relevant data.
 
 This code is my submission for Cranfield University's Cloud Computing module assignment for the MSc in Computational and Software Techniques in Engineering - Computational Intelligence for Data Analytics.
